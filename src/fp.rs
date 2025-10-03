@@ -17,11 +17,14 @@ use {
     sp1_lib::{syscall_bls12381_fp_addmod, syscall_bls12381_fp_mulmod, syscall_bls12381_fp_submod},
 };
 
+#[cfg(target_arch = "wasm32")]
+use rwasm::{bls12381_fp1_add, bls12381_fp1_mul, bls12381_fp1_sub};
+
 // The internal representation of this type is six 64-bit unsigned
 // integers in little-endian order. `Fp` values are always in
 // Montgomery form; i.e., Scalar(a) = aR mod p, with R = 2^384.
 #[derive(Copy, Clone)]
-#[repr(transparent)] // NOTE: this is technically required for ensuring the memory layout used in the zkvm precompiles is valid
+#[repr(transparent)] // NOTE: this is technically required for ensuring the memory layout used in the WASM precompiles is valid
 pub struct Fp(pub(crate) [u64; 6]);
 
 impl fmt::Debug for Fp {
@@ -90,7 +93,7 @@ const MODULUS: [u64; 6] = [
 const INV: u64 = 0x89f3_fffc_fffc_fffd;
 
 /// R_INV = (2^384)^(-1) mod p
-#[cfg(target_os = "zkvm")]
+#[cfg(target_arch = "wasm32")]
 const R_INV: Fp = Fp([
     0xf4d38259380b4820,
     0x7fe11274d898fafb,
@@ -485,10 +488,10 @@ impl Fp {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub fn add_inp(&mut self, rhs: &Fp) {
         unsafe {
-            syscall_bls12381_fp_addmod(
+            bls12381_fp1_add(
                 self.0.as_mut_ptr() as *mut u32,
                 rhs.0.as_ptr() as *const u32,
             );
@@ -513,13 +516,14 @@ impl Fp {
     #[inline]
     pub fn add(&self, rhs: &Fp) -> Fp {
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    syscall_bls12381_fp_addmod(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
+                    bls12381_fp1_add(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
                 }
                 out
-            } else {
+            }
+            else {
                 self.cpu_add(rhs)
             }
         }
@@ -553,10 +557,10 @@ impl Fp {
     #[inline]
     pub fn neg(&self) -> Fp {
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut out = Fp::zero();
                 unsafe {
-                    syscall_bls12381_fp_submod(out.0.as_mut_ptr() as *mut u32, self.0.as_ptr() as *const u32);
+                    bls12381_fp1_sub(out.0.as_mut_ptr() as *mut u32, self.0.as_ptr() as *const u32);
                 }
                 out
             } else {
@@ -566,10 +570,10 @@ impl Fp {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub fn sub_inp(&mut self, rhs: &Fp) {
         unsafe {
-            syscall_bls12381_fp_submod(
+            bls12381_fp1_sub(
                 self.0.as_mut_ptr() as *mut u32,
                 rhs.0.as_ptr() as *const u32,
             );
@@ -579,10 +583,10 @@ impl Fp {
     #[inline]
     pub fn sub(&self, rhs: &Fp) -> Fp {
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    syscall_bls12381_fp_submod(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
+                    bls12381_fp1_sub(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
                 }
                 out
             } else {
@@ -601,8 +605,8 @@ impl Fp {
     ///
     /// Uses precompiles to calculate it naively but much more cheaply.
     #[inline]
-    #[cfg(target_os = "zkvm")]
-    pub(crate) fn sum_of_products<const T: usize>(mut a: [Fp; T], b: [Fp; T]) -> Fp {
+    #[cfg(target_arch = "wasm32")]
+    pub(crate) fn sum_of_products<const T: usize>(a: [Fp; T], b: [Fp; T]) -> Fp {
         let mut out = Fp::zero();
         for (ai, bi) in a.iter_mut().zip(b.iter()) {
             ai.mul_inp(bi);
@@ -751,10 +755,10 @@ impl Fp {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub fn mul_inp(&mut self, rhs: &Fp) {
         unsafe {
-            syscall_bls12381_fp_mulmod(
+            bls12381_fp1_mul(
                 self.0.as_mut_ptr() as *mut u32,
                 rhs.0.as_ptr() as *const u32,
             );
@@ -813,10 +817,10 @@ impl Fp {
     #[inline]
     pub fn mul(&self, rhs: &Fp) -> Fp {
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    syscall_bls12381_fp_mulmod(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
+                    bls12381_fp1_mul(out.0.as_mut_ptr() as *mut u32, rhs.0.as_ptr() as *const u32);
                 }
                 out.mul_r_inv_internal();
                 out
@@ -828,12 +832,12 @@ impl Fp {
 
     /// Internal function to multiply the internal representation by `R_INV`, equivalent to transforming from
     /// the internal Montgomery form to a plain BigInt form.
-    /// Used as a bridge between the internal Montgomery representation and the zkvm precompiles.
+    /// Used as a bridge between the internal Montgomery representation and the WASM precompiles.
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn mul_r_inv_internal(&mut self) {
         unsafe {
-            syscall_bls12381_fp_mulmod(
+            fp1_mul(
                 self.0.as_mut_ptr() as *mut u32,
                 R_INV.0.as_ptr() as *const u32,
             );
@@ -842,20 +846,20 @@ impl Fp {
 
     /// Internal function to multiply the internal representation by `R`, equivalent to transforming from
     /// a plain BigInt form back to the internal Montgomery form.
-    /// Used as a bridge between the internal Montgomery representation and the zkvm precompiles.
+    /// Used as a bridge between the internal Montgomery representation and the WASM precompiles.
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn mul_r_internal(&mut self) {
         unsafe {
-            syscall_bls12381_fp_mulmod(self.0.as_mut_ptr() as *mut u32, R.0.as_ptr() as *const u32);
+            bls12381_fp1_mul(self.0.as_mut_ptr() as *mut u32, R.0.as_ptr() as *const u32);
         }
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub fn square_inp(&mut self) {
         unsafe {
-            syscall_bls12381_fp_mulmod(
+            bls12381_fp1_mul(
                 self.0.as_mut_ptr() as *mut u32,
                 self.0.as_ptr() as *const u32,
             );
@@ -917,10 +921,10 @@ impl Fp {
     #[inline]
     pub fn square(&self) -> Self {
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    syscall_bls12381_fp_mulmod(out.0.as_mut_ptr() as *mut u32, self.0.as_ptr() as *const u32);
+                    bls12381_fp1_mul(out.0.as_mut_ptr() as *mut u32, self.0.as_ptr() as *const u32);
                 }
                 out.mul_r_inv_internal();
                 out

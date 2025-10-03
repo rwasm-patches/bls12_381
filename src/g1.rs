@@ -23,9 +23,14 @@ cfg_if::cfg_if! {
         use alloc::vec::Vec;
     }
 }
-// Accelerated precompiles for zkvm. Defined directly to prevent circular dependency issues.
-#[cfg(target_os = "zkvm")]
-use sp1_lib::{bls12381::decompress_pubkey, syscall_bls12381_add, syscall_bls12381_double};
+// Accelerated precompiles for zkvm and rwasm. Defined directly to prevent circular dependency issues.
+cfg_if::cfg_if! {
+    if #[cfg(target_os = "zkvm")] {
+        use sp1_lib::{bls12381::decompress_pubkey, syscall_bls12381_add, syscall_bls12381_double};
+    } else if #[cfg(target_arch = "wasm32")] {
+        use rwasm::{bls12381_g1_add, bls12381_g1_double};
+    }
+}
 
 /// This is an element of $\mathbb{G}_1$ represented in the affine coordinate space.
 /// It is ideal to keep elements in this representation to reduce memory usage and
@@ -35,7 +40,7 @@ use sp1_lib::{bls12381::decompress_pubkey, syscall_bls12381_add, syscall_bls1238
 /// "unchecked" API was misused.
 #[cfg_attr(docsrs, doc(cfg(feature = "groups")))]
 #[derive(Copy, Clone, Debug)]
-#[repr(C)] // NOTE: this is technically required for ensuring the memory layout used in the zkvm precompiles is valid
+#[repr(C)] // NOTE: this is technically required for ensuring the memory layout used in the WASM precompiles is valid
 pub struct G1Affine {
     pub x: Fp,
     pub y: Fp,
@@ -429,7 +434,7 @@ impl G1Affine {
 
     /// Adds two affine points together.
     /// This function assumes that both values are on the curve.
-    /// In the zkvm context, this is accelerated with precompiles. In regular rust, this entails
+    /// In the WASM context, this is accelerated with precompiles. In regular rust, this entails
     /// converting one of the points to projective coordinates and then converting the output back.
     pub fn add_affine(&self, rhs: &Self) -> Self {
         if self.is_identity().into() {
@@ -439,7 +444,7 @@ impl G1Affine {
         }
 
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+           if #[cfg(target_arch = "wasm32")] {
                 // The add precompile only works when P != Q and P != -Q
                 if self.x != rhs.x {
                     // In this case, we know that P != Q and P != -Q, since both Q and -Q have the same `x` coordinate
@@ -450,7 +455,7 @@ impl G1Affine {
                     other.x.mul_r_inv_internal();
                     other.y.mul_r_inv_internal();
                     unsafe {
-                        syscall_bls12381_add(res.x.0.as_mut_ptr() as *mut [u32; 24], other.x.0.as_ptr() as *const [u32; 24]);
+                        bls12381_g1_add(res.x.0.as_mut_ptr() as *mut [u32; 24], other.x.0.as_ptr() as *const [u32; 24]);
                     }
                     res.x.mul_r_internal();
                     res.y.mul_r_internal();
@@ -461,7 +466,7 @@ impl G1Affine {
                     res.x.mul_r_inv_internal();
                     res.y.mul_r_inv_internal();
                     unsafe {
-                        syscall_bls12381_double(res.x.0.as_mut_ptr() as *mut [u32; 24]);
+                        bls12381_g1_double(res.x.0.as_mut_ptr() as *mut [u32; 24]);
                     }
                     res.x.mul_r_internal();
                     res.y.mul_r_internal();
@@ -486,16 +491,17 @@ impl G1Affine {
             return self;
         }
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 self.x.mul_r_inv_internal();
                 self.y.mul_r_inv_internal();
                 unsafe {
-                    syscall_bls12381_double(self.x.0.as_mut_ptr() as *mut [u32; 24]);
+                    bls12381_g1_double(self.x.0.as_mut_ptr() as *mut [u32; 24]);
                 }
                 self.x.mul_r_internal();
                 self.y.mul_r_internal();
                 self
-            } else {
+            }
+             else {
                 let proj = G1Projective::from(self);
                 let res = proj.double();
                 G1Affine::from(res)
@@ -882,7 +888,7 @@ impl G1Projective {
         xself
     }
 
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     fn mul_by_x(&self) -> G1Projective {
         let mut xself = G1Affine::identity();
 

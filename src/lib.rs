@@ -88,3 +88,6 @@ pub(crate) use digest::generic_array;
 
 #[cfg(feature = "experimental")]
 pub mod hash_to_curve;
+
+#[cfg(target_arch = "wasm32")]
+pub mod rwasm;

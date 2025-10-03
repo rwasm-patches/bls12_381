@@ -8,8 +8,9 @@ use ff::{Field, PrimeField};
 use rand_core::RngCore;
 
 cfg_if! {
-    if #[cfg(target_os = "zkvm")] {
-        use sp1_lib::sys_bigint;
+    if #[cfg(target_arch = "wasm32")] {
+        use rwasm::sys_bigint;
+    } else if #[cfg(target_os = "zkvm")] {
         use sp1_lib::{io::{hint_slice, read_vec}, unconstrained};
     }
 }
@@ -89,7 +90,7 @@ const MODULUS: Scalar = Scalar([
 ]);
 
 /// The modulus as u32 limbs.
-#[cfg(target_os = "zkvm")]
+#[cfg(target_arch = "wasm32")]
 const MODULUS_LIMBS_32: [u32; 8] = [
     0x0000_0001,
     0xffff_ffff,
@@ -101,7 +102,7 @@ const MODULUS_LIMBS_32: [u32; 8] = [
     0x73ed_a753,
 ];
 
-#[cfg(target_os = "zkvm")]
+#[cfg(target_arch = "wasm32")]
 const R_INV: [u32; 8] = [
     0xfe75_c040,
     0x13f7_5b69,
@@ -392,7 +393,7 @@ impl Scalar {
     #[inline]
     pub fn square(&self) -> Scalar {
         cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut res = *self;
                 res.mul_inp(self);
                 res
@@ -619,7 +620,7 @@ impl Scalar {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(target_arch = "wasm32")]
     pub(crate) fn mul_r_inv_internal(&mut self) {
         unsafe {
             sys_bigint(
@@ -635,7 +636,7 @@ impl Scalar {
     #[inline]
     pub fn mul_inp(&mut self, rhs: &Scalar) {
         cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 unsafe {
                     sys_bigint(
                         self.0.as_mut_ptr() as *mut[u32; 8],
@@ -646,8 +647,7 @@ impl Scalar {
                     );
                 }
                 self.mul_r_inv_internal();
-            }
-            else {
+            } else {
                 *self = self.mul(rhs);
             }
         }
@@ -684,7 +684,7 @@ impl Scalar {
     #[inline]
     pub fn mul(&self, rhs: &Self) -> Self {
         cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut res = *self;
                 res.mul_inp(rhs);
                 res
