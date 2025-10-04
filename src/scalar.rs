@@ -9,7 +9,7 @@ use rand_core::RngCore;
 
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
-        use crate::rwasm::sys_bigint;
+        use crate::rwasm::uint256_mul_mod;
     } else if #[cfg(target_os = "zkvm")] {
         use sp1_lib::{io::{hint_slice, read_vec}, unconstrained};
     }
@@ -622,31 +622,26 @@ impl Scalar {
     #[inline]
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn mul_r_inv_internal(&mut self) {
-        unsafe {
-            sys_bigint(
-                self.0.as_mut_ptr() as *mut [u32; 8],
-                0,
-                self.0.as_ptr() as *const [u32; 8],
-                &R_INV,
-                &MODULUS_LIMBS_32,
-            );
-        }
+        // Convert u64 array to u8 array
+        let self_bytes = self.to_bytes();
+        let r_inv_bytes = R.to_bytes(); // R is the Montgomery constant
+        let modulus_bytes = MODULUS.to_bytes();
+
+        let result = uint256_mul_mod(&self_bytes, &r_inv_bytes, &modulus_bytes);
+        *self = Scalar::from_bytes(&result).unwrap();
     }
 
     #[inline]
     pub fn mul_inp(&mut self, rhs: &Scalar) {
         cfg_if! {
             if #[cfg(target_arch = "wasm32")] {
-                unsafe {
-                    sys_bigint(
-                        self.0.as_mut_ptr() as *mut[u32; 8],
-                        0,
-                        self.0.as_ptr() as *const [u32; 8],
-                        rhs.0.as_ptr() as *const [u32; 8],
-                        &MODULUS_LIMBS_32,
-                    );
-                }
-                self.mul_r_inv_internal();
+                // Convert u64 arrays to u8 arrays
+                let self_bytes = self.to_bytes();
+                let rhs_bytes = rhs.to_bytes();
+                let modulus_bytes = MODULUS.to_bytes();
+
+                let result = uint256_mul_mod(&self_bytes, &rhs_bytes, &modulus_bytes);
+                *self = Scalar::from_bytes(&result).unwrap();
             } else {
                 *self = self.mul(rhs);
             }

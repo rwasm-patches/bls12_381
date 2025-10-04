@@ -16,7 +16,7 @@ extern "C" {
     fn _tower_fp2_bls12381_mul(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8);
     fn _tower_fp2_bls12381_sub(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8);
 
-    fn _sys_bigint(p_ptr: *mut u8, q_ptr: *const u8);
+    fn _uint256_mul_mod(x_ptr: *const u8, y_ptr: *const u8, m_ptr: *const u8) -> [u8; 32];
 }
 
 /// Fp operations
@@ -100,8 +100,6 @@ pub fn bls12381_g1_mul(p_ptr: *mut u8, q_ptr: *const u8) {
 
 #[inline]
 #[cfg(target_arch = "wasm32")]
-pub fn sys_bigint(p_ptr: *mut u8, q_ptr: *const u8) {
-    unsafe {
-        _sys_bigint(p_ptr, q_ptr);
-    }
+pub fn uint256_mul_mod(x: &[u8; 32], y: &[u8; 32], m: &[u8; 32]) -> [u8; 32] {
+    unsafe { _uint256_mul_mod(x.as_ptr(), y.as_ptr(), m.as_ptr()) }
 }
