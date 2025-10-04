@@ -65,7 +65,7 @@ pub fn bls12381_fp2_sub(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
 
 #[inline]
 #[cfg(target_arch = "wasm32")]
-pub fn fp2_mul(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
+pub fn bls12381_fp2_mul(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
     unsafe {
         _tower_fp2_bls12381_mul(p_ptr, q_ptr, r_ptr);
     }

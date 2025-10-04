@@ -9,7 +9,7 @@ use rand_core::RngCore;
 
 cfg_if! {
     if #[cfg(target_arch = "wasm32")] {
-        use rwasm::sys_bigint;
+        use crate::rwasm::sys_bigint;
     } else if #[cfg(target_os = "zkvm")] {
         use sp1_lib::{io::{hint_slice, read_vec}, unconstrained};
     }

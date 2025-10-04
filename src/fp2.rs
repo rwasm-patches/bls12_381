@@ -267,8 +267,9 @@ impl Fp2 {
     pub fn square_inp(&mut self) {
         unsafe {
             bls12381_fp2_mul(
-                self.c0.0.as_mut_ptr() as *mut u32,
-                self.c0.0.as_ptr() as *const u32,
+                self.c0.0.as_mut_ptr() as *mut u8,
+                self.c0.0.as_ptr() as *const u8,
+                self.c0.0.as_ptr() as *const u8,
             );
         }
         self.mul_r_inv_internal();
@@ -303,7 +304,7 @@ impl Fp2 {
             if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    bls12381_fp2_mul(out.c0.0.as_mut_ptr() as *mut u32, self.c0.0.as_ptr() as *const u32);
+                    bls12381_fp2_mul(out.c0.0.as_mut_ptr() as *mut u8, out.c0.0.as_ptr() as *const u8, self.c0.0.as_ptr() as *const u8);
                 }
                 out.mul_r_inv_internal();
                 out
@@ -318,8 +319,9 @@ impl Fp2 {
     pub fn mul_inp(&mut self, rhs: &Fp2) {
         unsafe {
             bls12381_fp2_mul(
-                self.c0.0.as_mut_ptr() as *mut u32,
-                rhs.c0.0.as_ptr() as *const u32,
+                self.c0.0.as_mut_ptr() as *mut u8,
+                self.c0.0.as_ptr() as *const u8,
+                rhs.c0.0.as_ptr() as *const u8,
             );
         }
         self.mul_r_inv_internal();
@@ -350,7 +352,7 @@ impl Fp2 {
             if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    bls12381_fp2_mul(out.c0.0.as_mut_ptr() as *mut u32, rhs.c0.0.as_ptr() as *const u32);
+                    bls12381_fp2_mul(out.c0.0.as_mut_ptr() as *mut u8, out.c0.0.as_ptr() as *const u8, rhs.c0.0.as_ptr() as *const u8);
                 }
                 out.mul_r_inv_internal();
                 out
@@ -365,8 +367,9 @@ impl Fp2 {
     pub fn add_inp(&mut self, rhs: &Fp2) {
         unsafe {
             bls12381_fp2_add(
-                self.c0.0.as_mut_ptr() as *mut u32,
-                rhs.c0.0.as_ptr() as *const u32,
+                self.c0.0.as_mut_ptr() as *mut u8,
+                self.c0.0.as_ptr() as *const u8,
+                rhs.c0.0.as_ptr() as *const u8,
             );
         }
     }
@@ -376,8 +379,9 @@ impl Fp2 {
     pub fn double_inp(&mut self) {
         unsafe {
             bls12381_fp2_add(
-                self.c0.0.as_mut_ptr() as *mut u32,
-                self.c0.0.as_ptr() as *const u32,
+                self.c0.0.as_mut_ptr() as *mut u8,
+                self.c0.0.as_ptr() as *const u8,
+                self.c0.0.as_ptr() as *const u8,
             );
         }
     }
@@ -395,7 +399,7 @@ impl Fp2 {
             if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    bls12381_fp2_add(out.c0.0.as_mut_ptr() as *mut u32, rhs.c0.0.as_ptr() as *const u32);
+                    bls12381_fp2_add(out.c0.0.as_mut_ptr() as *mut u8, out.c0.0.as_ptr() as *const u8, rhs.c0.0.as_ptr() as *const u8);
                 }
                 out
             } else {
@@ -409,8 +413,9 @@ impl Fp2 {
     pub fn sub_inp(&mut self, rhs: &Fp2) {
         unsafe {
             bls12381_fp2_sub(
-                self.c0.0.as_mut_ptr() as *mut u32,
-                rhs.c0.0.as_ptr() as *const u32,
+                self.c0.0.as_mut_ptr() as *mut u8,
+                self.c0.0.as_ptr() as *const u8,
+                rhs.c0.0.as_ptr() as *const u8,
             );
         }
     }
@@ -429,7 +434,7 @@ impl Fp2 {
             if #[cfg(target_arch = "wasm32")] {
                 let mut out = self.clone();
                 unsafe {
-                    bls12381_fp2_sub(out.c0.0.as_mut_ptr() as *mut u32, rhs.c0.0.as_ptr() as *const u32);
+                    bls12381_fp2_sub(out.c0.0.as_mut_ptr() as *mut u8, out.c0.0.as_ptr() as *const u8, rhs.c0.0.as_ptr() as *const u8);
                 }
                 out
             } else {
@@ -454,7 +459,7 @@ impl Fp2 {
             if #[cfg(target_arch = "wasm32")] {
                 let mut out = Fp2::zero();
                 unsafe {
-                    bls12381_fp2_sub(out.c0.0.as_mut_ptr() as *mut u32, self.c0.0.as_ptr() as *const u32);
+                    bls12381_fp2_sub(out.c0.0.as_mut_ptr() as *mut u8, out.c0.0.as_ptr() as *const u8, self.c0.0.as_ptr() as *const u8);
                 }
                 out
             } else {
