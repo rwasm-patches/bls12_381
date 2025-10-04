@@ -18,7 +18,7 @@ use {
 };
 
 #[cfg(target_arch = "wasm32")]
-use rwasm::{bls12381_fp1_add, bls12381_fp1_mul, bls12381_fp1_sub};
+use crate::rwasm::{bls12381_fp1_add, bls12381_fp1_mul, bls12381_fp1_sub};
 
 // The internal representation of this type is six 64-bit unsigned
 // integers in little-endian order. `Fp` values are always in
@@ -837,7 +837,7 @@ impl Fp {
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn mul_r_inv_internal(&mut self) {
         unsafe {
-            fp1_mul(
+            bls12381_fp1_mul(
                 self.0.as_mut_ptr() as *mut u32,
                 R_INV.0.as_ptr() as *const u32,
             );

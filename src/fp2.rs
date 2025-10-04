@@ -19,7 +19,7 @@ use {
 };
 
 #[cfg(target_arch = "wasm32")]
-use rwasm::{bls12381_fp2_add, bls12381_fp2_mul, bls12381_fp2_sub};
+use crate::rwasm::{bls12381_fp2_add, bls12381_fp2_mul, bls12381_fp2_sub};
 
 #[derive(Copy, Clone)]
 #[repr(C)] // NOTE: this is technically required for ensuring the memory layout used in the WASM precompiles is valid
@@ -317,7 +317,7 @@ impl Fp2 {
     #[cfg(target_arch = "wasm32")]
     pub fn mul_inp(&mut self, rhs: &Fp2) {
         unsafe {
-            bls12381_fp2_mulmod(
+            bls12381_fp2_mul(
                 self.c0.0.as_mut_ptr() as *mut u32,
                 rhs.c0.0.as_ptr() as *const u32,
             );

@@ -28,7 +28,7 @@ cfg_if::cfg_if! {
     if #[cfg(target_os = "zkvm")] {
         use sp1_lib::{bls12381::decompress_pubkey, syscall_bls12381_add, syscall_bls12381_double};
     } else if #[cfg(target_arch = "wasm32")] {
-        use rwasm::{bls12381_g1_add, bls12381_g1_double};
+        use crate::rwasm::{bls12381_g1_add, bls12381_g1_double};
     }
 }
 
@@ -867,46 +867,46 @@ impl G1Projective {
     }
 
     /// Multiply `self` by `crate::BLS_X`, using double and add.
-    #[cfg(not(target_os = "zkvm"))]
     fn mul_by_x(&self) -> G1Projective {
-        let mut xself = G1Projective::identity();
-        // NOTE: in BLS12-381 we can just skip the first bit.
-        let mut x = crate::BLS_X >> 1;
-        let mut tmp = *self;
-        while x != 0 {
-            tmp = tmp.double();
+        cfg_if::cfg_if! {
+            if #[cfg(target_arch = "wasm32")] {
+                let mut xself = G1Affine::identity();
 
-            if x % 2 == 1 {
-                xself += tmp;
+                let mut x = crate::BLS_X >> 1;
+                let mut tmp = G1Affine::from(*self);
+                while x != 0 {
+                    tmp = tmp.double();
+
+                    if x % 2 == 1 {
+                        xself = xself.add_affine(&tmp);
+                    }
+                    x >>= 1;
+                }
+                // finally, flip the sign
+                if crate::BLS_X_IS_NEGATIVE {
+                    xself = -xself;
+                }
+                xself.into()
+            } else {
+                let mut xself = G1Projective::identity();
+                // NOTE: in BLS12-381 we can just skip the first bit.
+                let mut x = crate::BLS_X >> 1;
+                let mut tmp = *self;
+                while x != 0 {
+                    tmp = tmp.double();
+
+                    if x % 2 == 1 {
+                        xself += tmp;
+                    }
+                    x >>= 1;
+                }
+                // finally, flip the sign
+                if crate::BLS_X_IS_NEGATIVE {
+                    xself = -xself;
+                }
+                xself
             }
-            x >>= 1;
         }
-        // finally, flip the sign
-        if crate::BLS_X_IS_NEGATIVE {
-            xself = -xself;
-        }
-        xself
-    }
-
-    #[cfg(target_arch = "wasm32")]
-    fn mul_by_x(&self) -> G1Projective {
-        let mut xself = G1Affine::identity();
-
-        let mut x = crate::BLS_X >> 1;
-        let mut tmp = G1Affine::from(*self);
-        while x != 0 {
-            tmp = tmp.double();
-
-            if x % 2 == 1 {
-                xself = xself.add_affine(&tmp);
-            }
-            x >>= 1;
-        }
-        // finally, flip the sign
-        if crate::BLS_X_IS_NEGATIVE {
-            xself = -xself;
-        }
-        xself.into()
     }
 
     /// Multiplies by $(1 - z)$, where $z$ is the parameter of BLS12-381, which
