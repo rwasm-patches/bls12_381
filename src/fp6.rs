@@ -119,7 +119,7 @@ impl Fp6 {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn sub_inp(&mut self, rhs: &Fp6) {
         self.c0.sub_inp(&rhs.c0);
         self.c1.sub_inp(&rhs.c1);
