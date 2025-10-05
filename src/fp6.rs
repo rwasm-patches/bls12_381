@@ -111,7 +111,7 @@ impl Fp6 {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn add_inp(&mut self, rhs: &Fp6) {
         self.c0.add_inp(&rhs.c0);
         self.c1.add_inp(&rhs.c1);
@@ -166,7 +166,7 @@ impl Fp6 {
     }
 
     /// Multiply by quadratic nonresidue v.
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn mul_by_nonresidue_owned(self) -> Self {
         // Given a + bv + cv^2, this produces
         //     av + bv^2 + cv^3
@@ -222,7 +222,7 @@ impl Fp6 {
 
     /// Raises this element to p.
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn frobenius_map_inp(&mut self) {
         self.c0.frobenius_map_inp();
         self.c1.frobenius_map_inp();

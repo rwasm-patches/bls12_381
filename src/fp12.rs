@@ -163,7 +163,7 @@ impl Fp12 {
     }
 
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn mul_inp(&mut self, other: &Fp12) {
         let aa = self.c0 * other.c0;
         let bb = self.c1 * other.c1;
@@ -232,7 +232,7 @@ impl Fp12 {
 
     /// Raises this element to p.
     #[inline]
-    #[cfg(target_os = "zkvm")]
+    #[cfg(any(target_os = "zkvm", target_arch = "wasm32"))]
     pub fn frobenius_map_inp(&mut self) {
         self.c0.frobenius_map_inp();
         self.c1.frobenius_map_inp();

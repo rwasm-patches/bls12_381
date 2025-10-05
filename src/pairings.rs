@@ -875,7 +875,7 @@ fn ell(f: &Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
     f.mul_by_014(&coeffs.2, &c1, &c0)
 }
 
-#[cfg(not(target_os = "zkvm"))]
+#[cfg(not(target_arch = "wasm32"))]
 fn ell(f: &Fp12, coeffs: &(Fp2, Fp2, Fp2), p: &G1Affine) -> Fp12 {
     let mut c0 = coeffs.0;
     let mut c1 = coeffs.1;
@@ -944,7 +944,7 @@ fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
     (tmp0, tmp3, tmp6)
 }
 
-#[cfg(not(target_os = "zkvm"))]
+#[cfg(not(target_arch = "wasm32"))]
 fn doubling_step(r: &mut G2Projective) -> (Fp2, Fp2, Fp2) {
     // Adaptation of Algorithm 26, https://eprint.iacr.org/2010/354.pdf
     let tmp0 = r.x.square();
@@ -1036,7 +1036,7 @@ fn addition_step(r: &mut G2Projective, q: &G2Affine) -> (Fp2, Fp2, Fp2) {
     (t6, t0, t5)
 }
 
-#[cfg(not(target_os = "zkvm"))]
+#[cfg(not(target_arch = "wasm32"))]
 fn addition_step(r: &mut G2Projective, q: &G2Affine) -> (Fp2, Fp2, Fp2) {
     // Adaptation of Algorithm 27, https://eprint.iacr.org/2010/354.pdf
     let zsquared = r.z.square();
