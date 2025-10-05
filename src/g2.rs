@@ -669,7 +669,7 @@ fn mul_by_3b(x: &Fp2) -> Fp2 {
 }
 
 #[inline]
-#[cfg(target_os = "zkvm")]
+#[cfg(target_arch = "wasm32")]
 fn mul_by_3b_inp(x: &mut Fp2) {
     x.mul_inp(&B3);
 }
@@ -733,7 +733,7 @@ impl G2Projective {
         // Algorithm 9, https://eprint.iacr.org/2015/1060.pdf
 
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut t0 = self.y.square();
                 let mut z3 = t0;
                 z3.double_inp();
@@ -798,7 +798,7 @@ impl G2Projective {
         // Algorithm 7, https://eprint.iacr.org/2015/1060.pdf
 
         cfg_if::cfg_if! {
-            if #[cfg(target_os = "zkvm")] {
+            if #[cfg(target_arch = "wasm32")] {
                 let mut t0 = self.x;
                 t0.mul_inp(&rhs.x);
                 let mut t1 = self.y;
