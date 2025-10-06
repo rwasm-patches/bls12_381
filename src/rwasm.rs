@@ -49,7 +49,7 @@ pub fn bls12381_fp1_add(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
         _tower_fp1_bls12381_add(a_offset, b_offset);
 
         // Copy result from q_ptr to p_ptr (48 bytes for one Fp element)
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 48);
+        core::ptr::copy(q_ptr, p_ptr, 48);
     }
 }
 
@@ -62,7 +62,7 @@ pub fn bls12381_fp1_sub(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
 
         _tower_fp1_bls12381_sub(a_offset, b_offset);
 
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 48);
+        core::ptr::copy(q_ptr, p_ptr, 48);
     }
 }
 
@@ -75,7 +75,7 @@ pub fn bls12381_fp1_mul(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
 
         _tower_fp1_bls12381_mul(a_offset, b_offset);
 
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 48);
+        core::ptr::copy(q_ptr, p_ptr, 48);
     }
 }
 
@@ -99,7 +99,7 @@ pub fn bls12381_fp2_add(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
         _tower_fp2_bls12381_add(a_c0_offset, a_c1_offset, b_c0_offset, b_c1_offset);
 
         // Copy result from q_ptr to p_ptr (96 bytes = 2 * 48 for two Fp elements)
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 96);
+        core::ptr::copy(q_ptr, p_ptr, 96);
     }
 }
 
@@ -114,7 +114,7 @@ pub fn bls12381_fp2_sub(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
 
         _tower_fp2_bls12381_sub(a_c0_offset, a_c1_offset, b_c0_offset, b_c1_offset);
 
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 96);
+        core::ptr::copy(q_ptr, p_ptr, 96);
     }
 }
 
@@ -129,7 +129,7 @@ pub fn bls12381_fp2_mul(p_ptr: *mut u8, q_ptr: *const u8, r_ptr: *const u8) {
 
         _tower_fp2_bls12381_mul(a_c0_offset, a_c1_offset, b_c0_offset, b_c1_offset);
 
-        core::ptr::copy_nonoverlapping(q_ptr, p_ptr, 96);
+        core::ptr::copy(q_ptr, p_ptr, 96);
     }
 }
 
