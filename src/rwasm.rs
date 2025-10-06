@@ -5,7 +5,7 @@
 #[link(wasm_import_module = "fluentbase_v1preview")]
 extern "C" {
     fn _bls12381_add(p_offset: i32, q_offset: i32);
-    fn _bls12381_decompress(p_offset: i32, q_offset: i32);
+    fn _bls12381_decompress(p_offset: i32, sign: u32);
     fn _bls12381_double(p_offset: i32);
 
     fn _tower_fp1_bls12381_add(p_offset: i32, q_offset: i32);
@@ -31,7 +31,7 @@ extern "C" {
         q_c1_offset: i32,
     );
 
-    fn _uint256_mul_mod(x_ptr: *const u8, y_ptr: *const u8, m_ptr: *const u8) -> [u8; 32];
+    fn _uint256_mul_mod(x_ptr: *mut u8, y_ptr: *const u8, m_ptr: *const u8);
 }
 
 /// Fp operations
@@ -145,9 +145,9 @@ pub fn bls12381_add(p_ptr: *mut u8, q_ptr: *const u8) {
 /// Performs BLS12-381 point decompression using RWASM precompile
 #[inline]
 #[cfg(target_arch = "wasm32")]
-pub fn bls12381_decompress(p_ptr: *mut u8, q_ptr: *const u8) {
+pub fn bls12381_decompress(p_ptr: *mut u8, sign: u32) {
     unsafe {
-        _bls12381_decompress(p_ptr as i32, q_ptr as i32);
+        _bls12381_decompress(p_ptr as i32, sign);
     }
 }
 
@@ -176,5 +176,9 @@ pub fn bls12381_g1_double(p_ptr: *mut u8) {
 #[inline]
 #[cfg(target_arch = "wasm32")]
 pub fn uint256_mul_mod(x: &[u8; 32], y: &[u8; 32], m: &[u8; 32]) -> [u8; 32] {
-    unsafe { _uint256_mul_mod(x.as_ptr(), y.as_ptr(), m.as_ptr()) }
+    let mut result = *x;
+    unsafe {
+        _uint256_mul_mod(result.as_mut_ptr(), y.as_ptr(), m.as_ptr());
+    }
+    result
 }
